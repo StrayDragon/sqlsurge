@@ -1,6 +1,6 @@
 # sqlsurge <!-- omit in toc -->
 
-[sqlsurge](https://marketplace.visualstudio.com/items?itemName=senken.sqlsurge) is a Visual Studio Code extension for SQL language server using [sqls](https://github.com/lighttiger2505/sqls). It works just **NOT ONLY with SQL files, but also with RAW SQL QUERIES on other languages such as TypeScript and Rust**.
+[sqlsurge](https://marketplace.visualstudio.com/items?itemName=senken.sqlsurge) is a Visual Studio Code extension for SQL language server using [sqls](https://github.com/lighttiger2505/sqls). It works just **NOT ONLY with SQL files, but also with RAW SQL QUERIES on other languages such as TypeScript, Python, and more**.
 
 Prisma Example in TypeScript:
 ![Alt text](resources/screenshot-ts.png)
@@ -58,7 +58,7 @@ It can be enabled by adding the following setting to settings.json.
 - VSCode Command: `Format Document`
 - Formatter: sqls
 
-#### Embedded SQL in Other Files (TypeScript, Rust, etc.)
+#### Embedded SQL in Other Files (TypeScript, Python, etc.)
 
 - VSCode Command: `sqlsurge: Format SQL`
 - Formatter: [SQL Formatter](https://github.com/sql-formatter-org/sql-formatter)
@@ -81,7 +81,12 @@ Quick info symbol for tables and columns can be shown by triggering completion w
 > [!NOTE]
 > This feature is experimental. Feedback is welcome!
 
-sqlsurge supports Prisma in TypeScript and SQLx in Rust by default. But you can use sqlsurge with any raw SQL queries, such as `TypeORM` or user-defined functions by setting.
+sqlsurge supports multiple languages by default:
+- **TypeScript**: Prisma, TypeORM, and other SQL libraries
+- **Python**: sqlite3, SQLAlchemy, Django ORM, psycopg2, and more
+- **JavaScript**: Same as TypeScript
+
+You can also configure sqlsurge to work with any raw SQL queries or user-defined functions.
 
 This is an example of settings for custom raw SQL queries.
 

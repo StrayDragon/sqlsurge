@@ -48,6 +48,10 @@ const extensionConfig = {
           },
         ],
       },
+      {
+        test: /\.py$/,
+        type: "asset/source",
+      },
     ],
   },
   devtool: "nosources-source-map",

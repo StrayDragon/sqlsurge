@@ -1,0 +1,22 @@
+{
+  "name": "@senken/sql-extraction-py",
+  "version": "0.1.0",
+  "description": "Python SQL extraction module for SQLSurge",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:pyodide": "pyodide build",
+    "clean": "rm -rf dist pkg",
+    "test": "python test_extractor.py"
+  },
+  "files": ["dist/**/*", "pkg/**/*"],
+  "devDependencies": {
+    "@types/node": "^24.2.0",
+    "typescript": "^5.9.2",
+    "valibot": "^1.1.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,8 +1,0 @@
-{
-  "compilerOptions": {
-    "outDir": "out",
-    "esModuleInterop": false,
-    "declaration": true
-  },
-  "extends": ["../../tsconfig.json"]
-}

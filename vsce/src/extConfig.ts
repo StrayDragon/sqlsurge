@@ -1,4 +1,4 @@
-import { customRawSqlQueryRsSchema } from "@senken/sql-extraction-rs/src";
+import type { CustomRawSqlQueryPyItem } from "@senken/sql-extraction-py/src";
 import { customRawSqlQueryTsSchema } from "@senken/sql-extraction-ts/src";
 import * as v from "valibot";
 import * as vscode from "vscode";
@@ -13,8 +13,14 @@ const extConfigSchemas = v.object({
       configs: customRawSqlQueryTsSchema,
     }),
     v.object({
-      language: v.literal("rust"),
-      configs: customRawSqlQueryRsSchema,
+      language: v.literal("python"),
+      configs: v.array(
+        v.object({
+          functionName: v.string(),
+          sqlArgNo: v.pipe(v.number(), v.minValue(1)),
+          isStringTemplate: v.boolean(),
+        }),
+      ),
     }),
   ]),
 });

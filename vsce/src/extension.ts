@@ -1,4 +1,4 @@
-import { extractSqlListRs } from "@senken/sql-extraction-rs/src";
+import { extractSqlListPy } from "@senken/sql-extraction-py/src";
 import { extractSqlListTs } from "@senken/sql-extraction-ts/src";
 import { ORIGINAL_SCHEME, type SqlNode } from "./interface";
 
@@ -39,7 +39,7 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   const completion = vscode.languages.registerCompletionItemProvider(
-    ["typescript", "rust"],
+    ["typescript", "python"],
     await completionProvider(virtualDocuments, refresh),
   );
   const commandFormatSql = await commandFormatSqlProvider(refresh);
@@ -55,7 +55,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // on save event
   vscode.workspace.onWillSaveTextDocument((event) => {
     // formatting
-    if (!event.document.languageId.match(/^(typescript|rust)$/g)) {
+    if (!event.document.languageId.match(/^(typescript|python)$/g)) {
       return;
     }
     if (getWorkspaceConfig("formatOnSave") === false) {
@@ -128,11 +128,12 @@ export async function activate(context: vscode.ExtensionContext) {
           sqlNodes = extractSqlListTs(rawContent, config?.configs);
           break;
         }
-        case "rust": {
+
+        case "python": {
           if (config?.language !== document.languageId) {
             config = undefined;
           }
-          sqlNodes = await extractSqlListRs(rawContent, config?.configs);
+          sqlNodes = await extractSqlListPy(rawContent, config?.configs);
           break;
         }
         default:

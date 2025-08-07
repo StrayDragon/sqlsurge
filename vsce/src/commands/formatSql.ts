@@ -101,6 +101,33 @@ function formatSqlNode(
   }
 
   const { prefix, suffix } = getPrefixAndSuffix(sqlNode.content);
+
+  // For Python files, use direct Range replacement instead of position calculation
+  if (document.languageId === "python") {
+    const isEnabledIndent = getWorkspaceConfig("formatSql.indent");
+    let formattedContent = format(sqlNode.content, sqlFormatterOptions);
+
+    if (isEnabledIndent) {
+      formattedContent = indentedContent(formattedContent, sqlNode.method_line);
+    }
+
+    editBuilder.replace(
+      new vscode.Range(
+        new vscode.Position(
+          sqlNode.code_range.start.line,
+          sqlNode.code_range.start.character,
+        ),
+        new vscode.Position(
+          sqlNode.code_range.end.line,
+          sqlNode.code_range.end.character,
+        ),
+      ),
+      prefix + formattedContent + suffix,
+    );
+    return;
+  }
+
+  // For TypeScript/JavaScript files, use the complex position calculation
   const { startPosition, endPosition } = getPositions(
     sqlNode,
     document,
@@ -155,6 +182,40 @@ function getPositions(
   suffix: string,
 ): { startPosition: number; endPosition: number } {
   const sourceText = document.getText();
+
+  // For non-TypeScript files, use simple line/character calculation
+  if (
+    document.languageId !== "typescript" &&
+    document.languageId !== "javascript"
+  ) {
+    const lines = sourceText.split("\n");
+    let startPosition = 0;
+    let endPosition = 0;
+
+    // Calculate start position
+    for (let i = 0; i < sqlNode.code_range.start.line; i++) {
+      startPosition += (lines[i]?.length || 0) + 1; // +1 for newline
+    }
+    startPosition += sqlNode.code_range.start.character - prefix.length;
+
+    // Calculate end position
+    endPosition = startPosition;
+    for (
+      let i = sqlNode.code_range.start.line;
+      i < sqlNode.code_range.end.line;
+      i++
+    ) {
+      endPosition += (lines[i]?.length || 0) + 1; // +1 for newline
+    }
+    endPosition +=
+      sqlNode.code_range.end.character -
+      sqlNode.code_range.start.character +
+      suffix.length;
+
+    return { startPosition, endPosition };
+  }
+
+  // For TypeScript/JavaScript files, use TypeScript compiler
   const sourceFile = ts.createSourceFile(
     "unusedFileName",
     sourceText,
@@ -181,13 +242,18 @@ function shouldSkipFormatting(
   const sourceText = document.getText();
   const startMatch = sourceText[startPosition - 1]?.match(/^["']$/);
   const endMatch = sourceText[endPosition]?.match(/^["']$/);
-  return (
-    document.languageId === "typescript" &&
+
+  // Skip formatting for single-line strings in TypeScript/JavaScript
+  const isTypeScriptSingleLine =
+    (document.languageId === "typescript" ||
+      document.languageId === "javascript") &&
     startMatch !== undefined &&
     startMatch !== null &&
     endMatch !== undefined &&
-    endMatch !== null
-  );
+    endMatch !== null;
+
+  // For Python, we generally don't skip formatting unless it's problematic
+  return isTypeScriptSingleLine;
 }
 
 function indentedContent(
