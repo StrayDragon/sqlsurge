@@ -1,5 +1,4 @@
 import type { CustomRawSqlQueryPyItem } from "@senken/sql-extraction-py/src";
-import { customRawSqlQueryTsSchema } from "@senken/sql-extraction-ts/src";
 import * as v from "valibot";
 import * as vscode from "vscode";
 import { createLogger } from "./outputChannel";
@@ -7,22 +6,16 @@ import { createLogger } from "./outputChannel";
 const extConfigSchemas = v.object({
   formatOnSave: v.boolean(),
   "formatSql.indent": v.boolean(),
-  customRawSqlQuery: v.union([
-    v.object({
-      language: v.literal("typescript"),
-      configs: customRawSqlQueryTsSchema,
-    }),
-    v.object({
-      language: v.literal("python"),
-      configs: v.array(
-        v.object({
-          functionName: v.string(),
-          sqlArgNo: v.pipe(v.number(), v.minValue(1)),
-          isStringTemplate: v.boolean(),
-        }),
-      ),
-    }),
-  ]),
+  customRawSqlQuery: v.object({
+    language: v.literal("python"),
+    configs: v.array(
+      v.object({
+        functionName: v.string(),
+        sqlArgNo: v.pipe(v.number(), v.minValue(1)),
+        isStringTemplate: v.boolean(),
+      }),
+    ),
+  }),
 });
 
 type ExtConfig = v.InferOutput<typeof extConfigSchemas>;

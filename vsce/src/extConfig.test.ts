@@ -13,8 +13,7 @@ describe("extConfig", () => {
       key                    | expected
       ${"formatOnSave"}      | ${true}
       ${"formatSql.indent"}  | ${false}
-      ${"customRawSqlQuery"} | ${{ language: "typescript", configs: [{ functionName: "functionName", sqlArgNo: 1, isTemplateLiteral: true }] }}
-      ${"customRawSqlQuery"} | ${{ language: "rust", configs: [{ functionName: "functionName", sqlArgNo: 1, isMacro: true }] }}
+      ${"customRawSqlQuery"} | ${{ language: "python", configs: [{ functionName: "functionName", sqlArgNo: 1, isStringTemplate: true }] }}
     `("Should return workspace config: sqlsurge.$key", ({ key, expected }) => {
       jest.spyOn(vscode.workspace, "getConfiguration").mockReturnValue({
         get: jest.fn().mockReturnValue(expected),
@@ -28,7 +27,7 @@ describe("extConfig", () => {
       key                    | expected
       ${"formatOnSave"}      | ${"true"}
       ${"formatSql.indent"}  | ${"false"}
-      ${"customRawSqlQuery"} | ${{ language: "rust", configs: [{ functionName: "functionName", sqlArgNo: 0, isTemplateLiteral: true }] }}
+      ${"customRawSqlQuery"} | ${{ language: "unknown", configs: [{ functionName: "functionName", sqlArgNo: 0, isStringTemplate: true }] }}
     `(
       "Should return undefined with invalid config: sqlsurge.$key",
       ({ key, expected }) => {
