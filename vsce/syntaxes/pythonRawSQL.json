@@ -1,0 +1,115 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Python: raw SQL highlighting",
+  "scopeName": "source.python.rawSQL",
+  "fileTypes": ["py", "pyw"],
+  "injectionSelector": "L:source.python -string -comment",
+  "patterns": [
+    {
+      "comment": "SQL in raw_sql function call with triple-quoted strings",
+      "name": "string.quoted.triple.python",
+      "begin": "(?<=raw_sql\\s*\\(\\s*)(\"\"\")",
+      "end": "(\"\"\")",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.string.begin.python" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.end.python" }
+      },
+      "contentName": "meta.embedded.block.sql",
+      "patterns": [
+        { "include": "source.sql" },
+        { "include": "source.plpgsql.postgres" }
+      ]
+    },
+    {
+      "comment": "SQL in raw_sql function call with single triple-quoted strings",
+      "name": "string.quoted.triple.python",
+      "begin": "(?<=raw_sql\\s*\\(\\s*)(''')",
+      "end": "(''')",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.string.begin.python" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.end.python" }
+      },
+      "contentName": "meta.embedded.block.sql",
+      "patterns": [
+        { "include": "source.sql" },
+        { "include": "source.plpgsql.postgres" }
+      ]
+    },
+    {
+      "comment": "SQL in f-string with triple quotes",
+      "name": "string.interpolated.python",
+      "begin": "(f)(\"\"\")",
+      "end": "(\"\"\")",
+      "beginCaptures": {
+        "1": { "name": "storage.type.string.python" },
+        "2": { "name": "punctuation.definition.string.begin.python" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.end.python" }
+      },
+      "patterns": [
+        {
+          "name": "meta.embedded.block.sql",
+          "begin": "(?i)(?=.*\\b(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|WITH)\\b)",
+          "end": "(?=\\{|$)",
+          "patterns": [
+            { "include": "source.sql" },
+            { "include": "source.plpgsql.postgres" }
+          ]
+        },
+        {
+          "name": "meta.interpolation.python",
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.interpolation.begin.python" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.interpolation.end.python" }
+          },
+          "patterns": [{ "include": "source.python#expression" }]
+        }
+      ]
+    },
+    {
+      "comment": "SQL in f-string with single triple quotes",
+      "name": "string.interpolated.python",
+      "begin": "(f)(''')",
+      "end": "(''')",
+      "beginCaptures": {
+        "1": { "name": "storage.type.string.python" },
+        "2": { "name": "punctuation.definition.string.begin.python" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.end.python" }
+      },
+      "patterns": [
+        {
+          "name": "meta.embedded.block.sql",
+          "begin": "(?i)(?=.*\\b(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|WITH)\\b)",
+          "end": "(?=\\{|$)",
+          "patterns": [
+            { "include": "source.sql" },
+            { "include": "source.plpgsql.postgres" }
+          ]
+        },
+        {
+          "name": "meta.interpolation.python",
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.interpolation.begin.python" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.interpolation.end.python" }
+          },
+          "patterns": [{ "include": "source.python#expression" }]
+        }
+      ]
+    }
+  ]
+}

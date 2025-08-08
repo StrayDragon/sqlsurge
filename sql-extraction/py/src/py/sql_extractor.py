@@ -99,19 +99,65 @@ class SqlExtractor(ast.NodeVisitor):
             if sql_arg.end_col_offset
             else start_col + len(str(sql_content))
         )
+        
+        # Store original positions for later adjustment
+        original_start_line = start_line
+        original_start_col = start_col
+        original_end_line = end_line
+        original_end_col = end_col
 
         # Adjust for quotes
+        is_triple_quoted = False
         if self.source_lines[start_line][start_col : start_col + 3] in ['"""', "'''"]:
             # Triple quoted string
             start_col += 3
-            end_col -= 3
+            # For triple quoted strings, keep the original AST end position
+            # Do NOT adjust end_col for closing quotes - AST already accounts for this
+            end_line = original_end_line
+            end_col = original_end_col
+            is_triple_quoted = True
         elif self.source_lines[start_line][start_col] in ['"', "'"]:
             # Single or double quoted string
             start_col += 1
             end_col -= 1
 
+        # For multi-line strings, adjust for leading whitespace in SQL content
+        if is_triple_quoted and '\n' in sql_content:
+            # Find the first non-empty line with SQL content
+            lines = sql_content.split('\n')
+            first_content_line_idx = None
+            min_indent = float('inf')
+            
+            for i, line in enumerate(lines):
+                stripped = line.strip()
+                if stripped:  # Non-empty line
+                    if first_content_line_idx is None:
+                        first_content_line_idx = i
+                    # Calculate indentation of this line
+                    indent = len(line) - len(line.lstrip())
+                    min_indent = min(min_indent, indent)
+            
+            if first_content_line_idx is not None and min_indent != float('inf'):
+                # Adjust start position to point to actual SQL content
+                # NOTE: Do NOT modify end_line and end_col here - they should remain as AST original values
+                if first_content_line_idx > 0:
+                    # SQL starts on a new line after the opening quotes
+                    start_line += first_content_line_idx
+                    start_col = min_indent
+                else:
+                    # SQL starts on the same line as opening quotes
+                    start_col += min_indent
+
         # Method line (function call line)
         method_line = call_node.lineno - 1
+
+        # Debug: Print position information (disabled)
+        # print(f"DEBUG: AST end_lineno={sql_arg.end_lineno}, AST end_col_offset={sql_arg.end_col_offset}")
+        # print(f"DEBUG: original_end_line={original_end_line}, original_end_col={original_end_col}")
+        # print(f"DEBUG: final_end_line={end_line}, final_end_col={end_col}")
+        # print(f"DEBUG: is_triple_quoted={is_triple_quoted}")
+        # if 'SELECT' in sql_content:
+        #     print(f"DEBUG: This is the first SQL node with SELECT")
 
         sql_node = SqlNode(
             code_range=Range(
@@ -216,6 +262,7 @@ def extract_sql_list(
         CustomRawSqlQueryPy(functionName="query", sqlArgNo=1),
         CustomRawSqlQueryPy(functionName="raw", sqlArgNo=1),  # Django ORM
         CustomRawSqlQueryPy(functionName="text", sqlArgNo=1),  # SQLAlchemy
+        CustomRawSqlQueryPy(functionName="raw_sql", sqlArgNo=1),  # Custom raw_sql function
     ]
 
     # Parse custom configurations if provided

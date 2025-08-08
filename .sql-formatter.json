@@ -1,0 +1,11 @@
+{
+  "language": "mysql",
+  "dialect": "mysql",
+  "keywordCase": "upper",
+  "identifierCase": "lower",
+  "functionCase": "upper",
+  "dataTypeCase": "upper",
+  "linesBetweenQueries": 2,
+  "denseOperators": false,
+  "newlineBeforeSemicolon": false
+}

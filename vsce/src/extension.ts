@@ -4,16 +4,16 @@ import { ORIGINAL_SCHEME, type SqlNode } from "./interface";
 import * as ts from "typescript";
 import * as vscode from "vscode";
 
-import { commandFormatSqlProvider } from "./commands/formatSql";
-import { command as commandInstallSqls } from "./commands/installSqls";
-import { command as commandRestartLS } from "./commands/restartLS";
+import { registerEditSqlInTempFileCommand } from "./commands/tempFileEditor";
 import { completionProvider } from "./completion";
 import { getWorkspaceConfig } from "./extConfig";
+import { hoverProvider } from "./hover";
 import {
   type IncrementalLanguageService,
   createIncrementalLanguageService,
   createIncrementalLanguageServiceHost,
 } from "./languageService";
+import { linkedEditingRangeProvider } from "./linkedEditingRange";
 import { createLogger } from "./outputChannel";
 import { client, startSqlsClient } from "./startSqlsClient";
 
@@ -41,29 +41,26 @@ export async function activate(context: vscode.ExtensionContext) {
     ["python"],
     await completionProvider(virtualDocuments, refresh),
   );
-  const commandFormatSql = await commandFormatSqlProvider(refresh);
+  const hover = vscode.languages.registerHoverProvider(
+    ["python"],
+    await hoverProvider(virtualDocuments, refresh),
+  );
+  const linkedEditing = vscode.languages.registerLinkedEditingRangeProvider(
+    ["python"],
+    await linkedEditingRangeProvider(virtualDocuments, refresh),
+  );
+  const commandEditSqlInTempFile = registerEditSqlInTempFileCommand(refresh);
+
+  // Store context globally for temp file tracking
+  (global as any).sqlsurgeContext = context;
 
   context.subscriptions.push(
     logger,
     completion,
-    commandInstallSqls,
-    commandFormatSql,
-    commandRestartLS,
+    hover,
+    linkedEditing,
+    commandEditSqlInTempFile,
   );
-
-  // on save event
-  vscode.workspace.onWillSaveTextDocument((event) => {
-    // formatting
-    if (!event.document.languageId.match(/^python$/g)) {
-      return;
-    }
-    if (getWorkspaceConfig("formatOnSave") === false) {
-      logger.info("[onWillSaveTextDocument]", "`formatOnSave` is false.");
-      return;
-    }
-    event.waitUntil(vscode.commands.executeCommand("sqlsurge.formatSql"));
-    logger.info("[onWillSaveTextDocument]", "formatted on save.");
-  });
 
   vscode.workspace.onDidChangeConfiguration(() => {
     // validate customRawSqlQuery
@@ -124,7 +121,8 @@ export async function activate(context: vscode.ExtensionContext) {
           if (config?.language !== document.languageId) {
             config = undefined;
           }
-          sqlNodes = await extractSqlListPy(rawContent, config?.configs);
+          const result = await extractSqlListPy(rawContent, config?.configs);
+          sqlNodes = result || [];
           break;
         }
         default:
@@ -133,30 +131,31 @@ export async function activate(context: vscode.ExtensionContext) {
 
       const lastVirtualFileNames = virtualContents.get(fileName) ?? [];
       // update virtual files
-      const vFileNames = sqlNodes.map((sqlNode, index) => {
-        const virtualFileName = `${fileName}@${index}.sql`;
-        const offset = document.offsetAt(
-          new vscode.Position(
-            sqlNode.code_range.start.line,
-            sqlNode.code_range.start.character,
-          ),
-        );
-        const prefix = rawContent.slice(0, offset).replace(/[^\n]/g, " ");
-        service.writeSnapshot(
-          virtualFileName,
-          ts.ScriptSnapshot.fromString(prefix + sqlNode.content),
-        );
-        return virtualFileName;
-      });
+      const vFileNames =
+        sqlNodes?.map((sqlNode, index) => {
+          const virtualFileName = `${fileName}@${index}.sql`;
+          const offset = document.offsetAt(
+            new vscode.Position(
+              sqlNode.code_range.start.line,
+              sqlNode.code_range.start.character,
+            ),
+          );
+          const prefix = rawContent.slice(0, offset).replace(/[^\n]/g, " ");
+          service.writeSnapshot(
+            virtualFileName,
+            ts.ScriptSnapshot.fromString(prefix + sqlNode.content),
+          );
+          return virtualFileName;
+        }) ?? [];
 
       // remove unused virtual files
       lastVirtualFileNames
-        .filter((vFileName) => !vFileNames.includes(vFileName))
+        .filter((vFileName) => !(vFileNames ?? []).includes(vFileName))
         .map((vFileName) => {
           service.deleteSnapshot(vFileName);
         });
       virtualContents.set(fileName, vFileNames);
-      const sqlNodesWithVirtualDoc = sqlNodes.map((block, idx) => {
+      const sqlNodesWithVirtualDoc = (sqlNodes || []).map((block, idx) => {
         if (vFileNames[idx] === undefined) {
           throw new Error(`vFileName[${idx}] is undefined.`);
         }

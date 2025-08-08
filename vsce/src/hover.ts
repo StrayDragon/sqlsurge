@@ -2,23 +2,22 @@ import * as vscode from "vscode";
 import { ORIGINAL_SCHEME, type SqlNode } from "./interface";
 import { createLogger } from "./outputChannel";
 
-export async function completionProvider(
+export async function hoverProvider(
   virtualDocuments: Map<string, string>,
   refresh: (
     document: vscode.TextDocument,
   ) => Promise<(SqlNode & { vFileName: string })[]>,
 ) {
   return {
-    async provideCompletionItems(
+    async provideHover(
       document: vscode.TextDocument,
       position: vscode.Position,
       _token: vscode.CancellationToken,
-      context: vscode.CompletionContext,
     ) {
       const logger = createLogger();
 
-      logger.debug("[provideCompletionItems]", "Starting completion...");
-      logger.debug("[provideCompletionItems]", "file: ", document.fileName);
+      logger.debug("[provideHover]", "Starting hover...");
+      logger.debug("[provideHover]", "file: ", document.fileName);
       const sqlNodes = await refresh(document);
       const sqlNode = sqlNodes.find(({ code_range: { start, end } }) => {
         // in range
@@ -29,7 +28,7 @@ export async function completionProvider(
           (end.line === position.line && position.character <= end.character)
         );
       });
-      if (!sqlNode) return [];
+      if (!sqlNode) return null;
 
       // Delegate LSP
       // update virtual content with unique URI for each SQL block
@@ -69,22 +68,23 @@ export async function completionProvider(
         position.character,
       );
 
-      // trigger completion on virtual file
+      // trigger hover on virtual file
       const vDocUriString = `${ORIGINAL_SCHEME}:${uniqueVFileName}`;
       const vDocUri = vscode.Uri.parse(vDocUriString);
 
       logger.debug(
-        "[provideCompletionItems] Virtual position:",
+        "[provideHover] Virtual position:",
         virtualPosition.line,
         virtualPosition.character,
       );
-      logger.debug("[provideCompletionItems] Finished completion.");
-      return vscode.commands.executeCommand<vscode.CompletionList>(
-        "vscode.executeCompletionItemProvider",
+      logger.debug("[provideHover] Finished hover.");
+      const hoverResults = await vscode.commands.executeCommand<vscode.Hover[]>(
+        "vscode.executeHoverProvider",
         vDocUri,
         virtualPosition,
-        context.triggerCharacter,
       );
+      // Return the first hover result or null
+      return hoverResults && hoverResults.length > 0 ? hoverResults[0] : null;
     },
   };
 }

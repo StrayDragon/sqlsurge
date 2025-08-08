@@ -29,13 +29,36 @@ export async function startSqlsClient() {
     return;
   }
 
+  // Add config file path for sqls
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  const configArgs = [];
+  if (workspaceFolder) {
+    const configPath = vscode.Uri.joinPath(workspaceFolder.uri, ".sqlsurge");
+    try {
+      await vscode.workspace.fs.stat(configPath);
+      configArgs.push("-c", configPath.fsPath);
+      logger.debug(
+        "[startSqlsClient]",
+        `Using config file: ${configPath.fsPath}`,
+      );
+    } catch {
+      logger.debug(
+        "[startSqlsClient]",
+        "No .sqlsurge config file found in workspace",
+      );
+    }
+  }
+
   const serverOptions: ServerOptions = {
     command: sqlsInPATH.fsPath,
-    args: [...config.flags],
+    args: [...configArgs, ...config.flags],
   };
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ language: "sql", pattern: "**/*.sql" }],
+    documentSelector: [
+      { language: "sql", pattern: "**/*.sql" },
+      { language: "python", pattern: "**/*.py" },
+    ],
   };
 
   client = new LanguageClient("sqls", serverOptions, clientOptions);

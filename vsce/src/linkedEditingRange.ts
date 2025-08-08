@@ -2,23 +2,26 @@ import * as vscode from "vscode";
 import { ORIGINAL_SCHEME, type SqlNode } from "./interface";
 import { createLogger } from "./outputChannel";
 
-export async function completionProvider(
+export async function linkedEditingRangeProvider(
   virtualDocuments: Map<string, string>,
   refresh: (
     document: vscode.TextDocument,
   ) => Promise<(SqlNode & { vFileName: string })[]>,
 ) {
   return {
-    async provideCompletionItems(
+    async provideLinkedEditingRanges(
       document: vscode.TextDocument,
       position: vscode.Position,
       _token: vscode.CancellationToken,
-      context: vscode.CompletionContext,
-    ) {
+    ): Promise<vscode.LinkedEditingRanges | null> {
       const logger = createLogger();
 
-      logger.debug("[provideCompletionItems]", "Starting completion...");
-      logger.debug("[provideCompletionItems]", "file: ", document.fileName);
+      logger.debug(
+        "[provideLinkedEditingRanges]",
+        "Starting linked editing...",
+      );
+      logger.debug("[provideLinkedEditingRanges]", "file: ", document.fileName);
+
       const sqlNodes = await refresh(document);
       const sqlNode = sqlNodes.find(({ code_range: { start, end } }) => {
         // in range
@@ -29,10 +32,10 @@ export async function completionProvider(
           (end.line === position.line && position.character <= end.character)
         );
       });
-      if (!sqlNode) return [];
+
+      if (!sqlNode) return null;
 
       // Delegate LSP
-      // update virtual content with unique URI for each SQL block
       const offset = document.offsetAt(
         new vscode.Position(
           sqlNode.code_range.start.line,
@@ -63,28 +66,53 @@ export async function completionProvider(
       virtualDocuments.set(uniqueVFileName, vContent);
 
       // Calculate the correct position in virtual document
-      // The virtual document has the same line structure but with prefix spaces
       const virtualPosition = new vscode.Position(
         position.line,
         position.character,
       );
 
-      // trigger completion on virtual file
+      // trigger linked editing on virtual file
       const vDocUriString = `${ORIGINAL_SCHEME}:${uniqueVFileName}`;
       const vDocUri = vscode.Uri.parse(vDocUriString);
 
       logger.debug(
-        "[provideCompletionItems] Virtual position:",
+        "[provideLinkedEditingRanges] Virtual position:",
         virtualPosition.line,
         virtualPosition.character,
       );
-      logger.debug("[provideCompletionItems] Finished completion.");
-      return vscode.commands.executeCommand<vscode.CompletionList>(
-        "vscode.executeCompletionItemProvider",
-        vDocUri,
-        virtualPosition,
-        context.triggerCharacter,
-      );
+
+      try {
+        const linkedEditingRanges =
+          await vscode.commands.executeCommand<vscode.LinkedEditingRanges>(
+            "vscode.executeLinkedEditingRangeProvider",
+            vDocUri,
+            virtualPosition,
+          );
+
+        if (!linkedEditingRanges || !linkedEditingRanges.ranges) {
+          return null;
+        }
+
+        // Map virtual ranges back to original document
+        const mappedRanges = linkedEditingRanges.ranges.map((range) => {
+          // Adjust ranges back to original document coordinates
+          return new vscode.Range(
+            range.start.line,
+            range.start.character,
+            range.end.line,
+            range.end.character,
+          );
+        });
+
+        logger.debug("[provideLinkedEditingRanges] Finished linked editing.");
+        return new vscode.LinkedEditingRanges(
+          mappedRanges,
+          linkedEditingRanges.wordPattern,
+        );
+      } catch (error) {
+        logger.debug("[provideLinkedEditingRanges] Error:", error);
+        return null;
+      }
     },
   };
 }

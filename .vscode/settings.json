@@ -9,6 +9,9 @@
   "typescript.tsc.autoDetect": "off",
   "editor.tabSize": 2,
   "editor.formatOnSave": true,
+  "[sql]": {
+    "editor.formatOnSave": false
+  },
   "editor.codeActionsOnSave": {
     "quickfix.biome": "explicit",
     "source.organizeImports.biome": "always"

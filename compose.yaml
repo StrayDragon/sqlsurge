@@ -13,20 +13,20 @@ services:
       - mysql:/var/lib/mysql8
     ports:
       - 13307:3306
-  # mysql57:
-  #   image: mysql:5.7
-  #   container_name: sqls_mysql57
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: root
-  #     MYSQL_DATABASE: world
-  #     MYSQL_USER: docker
-  #     MYSQL_PASSWORD: docker
-  #     TZ: "Asia/Tokyo"
-  #   command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-  #   volumes:
-  #     - mysql:/var/lib/mysql57
-  #   ports:
-  #     - 13306:3306
+  mysql57:
+    image: mysql:5.7
+    container_name: sqls_mysql57
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test_db
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbpass
+      TZ: "Asia/Tokyo"
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql57:/var/lib/mysql
+    ports:
+      - 13306:3306
   # mysql56:
   #   image: mysql:5.6
   #   container_name: sqls_mysql56
@@ -66,5 +66,6 @@ services:
       - mssql:/var/opt/mssql/data
 volumes:
   mysql:
+  mysql57:
   postgres:
   mssql:

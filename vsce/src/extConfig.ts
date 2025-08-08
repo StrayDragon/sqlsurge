@@ -6,6 +6,7 @@ import { createLogger } from "./outputChannel";
 const extConfigSchemas = v.object({
   formatOnSave: v.boolean(),
   "formatSql.indent": v.boolean(),
+  enableTempFileEdit: v.boolean(),
   customRawSqlQuery: v.object({
     language: v.literal("python"),
     configs: v.array(

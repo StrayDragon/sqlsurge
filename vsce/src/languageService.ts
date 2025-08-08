@@ -385,7 +385,7 @@ export function createIncrementalLanguageServiceHost(
     },
     getScriptVersion: (fileName) => {
       fileName = normalizePath(fileName);
-      if (fileName.includes("src/index.ts")) {
+      if (fileName?.includes("src/index.ts")) {
         log("getScriptVersion", fileName, fileVersions.get(fileName) ?? 0);
       }
       return (fileVersions.get(fileName) ?? 0).toString();
@@ -453,7 +453,7 @@ function createLogger(
         ...mapped.flatMap((item) => {
           // const first = `{${idx}}`;
           if (typeof item === "string") {
-            if (item.includes("\n")) {
+            if (item?.includes("\n")) {
               return `\n------\n${item}\n------`;
             }
             return item;

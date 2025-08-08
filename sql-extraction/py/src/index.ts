@@ -252,7 +252,7 @@ function extractSqlString(
       const upperContent = content.toUpperCase();
 
       // Check if it contains SQL keywords
-      if (sqlKeywords.some((keyword) => upperContent.includes(keyword))) {
+      if (sqlKeywords.some((keyword) => upperContent?.includes(keyword))) {
         const startPos = functionCall.indexOf(stringMatch) + 1; // +1 to skip opening quote
         return {
           content: content.trim(),

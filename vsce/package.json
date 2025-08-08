@@ -16,11 +16,14 @@
   "publisher": "senken",
   "keywords": ["multi-root ready"],
   "categories": ["Programming Languages"],
-  "icon": "resources/sqlsurge-icon.png",
   "engines": {
     "vscode": "^1.96.0"
   },
-  "activationEvents": ["onLanguage:sql", "onLanguage:python"],
+  "activationEvents": [
+    "onLanguage:sql",
+    "onLanguage:python",
+    "onCommand:sqlsurge.editSqlInTempFile"
+  ],
   "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "pnpm compile --mode production --devtool hidden-source-map",
@@ -42,15 +45,10 @@
           "default": [],
           "description": "Flags like -trace and -log to be used while running the language server."
         },
-        "sqlsurge.formatOnSave": {
+        "sqlsurge.enableTempFileEdit": {
           "type": "boolean",
           "default": true,
-          "description": "Format SQL on save."
-        },
-        "sqlsurge.formatSql.indent": {
-          "type": "boolean",
-          "default": false,
-          "description": "Format SQL with indent."
+          "description": "Enable editing SQL in temporary files with sync back to original."
         },
         "sqlsurge.customRawSqlQuery": {
           "type": "object",
@@ -101,16 +99,26 @@
     },
     "commands": [
       {
-        "command": "sqlsurge.installSqls",
-        "title": "sqlsurge: Install sqls"
-      },
+        "command": "sqlsurge.editSqlInTempFile",
+        "title": "Edit SQL in Temporary File",
+        "category": "sqlsurge"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "sqlsurge.editSqlInTempFile",
+          "when": "editorHasSelection && resourceExtname == .py",
+          "group": "sqlsurge"
+        }
+      ]
+    },
+    "keybindings": [
       {
-        "command": "sqlsurge.restartSqlLanguageServer",
-        "title": "sqlsurge: Restart SQL Language Server"
-      },
-      {
-        "command": "sqlsurge.formatSql",
-        "title": "sqlsurge: Format SQL"
+        "command": "sqlsurge.editSqlInTempFile",
+        "key": "ctrl+shift+e",
+        "mac": "cmd+shift+e",
+        "when": "editorTextFocus && resourceExtname == .py"
       }
     ],
     "grammars": [
@@ -125,6 +133,14 @@
         ],
         "scopeName": "source.ts.prismaClientRawSQL",
         "path": "./syntaxes/prismaClientRawSQL.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.sql": "sql"
+        }
+      },
+      {
+        "injectTo": ["source.python"],
+        "scopeName": "source.python.rawSQL",
+        "path": "./syntaxes/pythonRawSQL.json",
         "embeddedLanguages": {
           "meta.embedded.block.sql": "sql"
         }
